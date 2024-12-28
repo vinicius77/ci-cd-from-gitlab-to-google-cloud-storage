@@ -1,0 +1,13 @@
+image: google/cloud-sdk:latest
+
+stages:
+  - deploy
+
+deploy:
+  stage: deploy
+  script:
+    - yarn
+    - yarn run buildtest
+    - gcloud config configurations activate "$GCP_PROJECT_NAME"
+    - gsutil -m rm -r "gs://${CDN_TARGET_PATH}/${GCP_BUCKET_FOLDER}/" 
+    - gsutil -m cp client/dist/*.* "gs://${CDN_TARGET_PATH}/${GCP_BUCKET_FOLDER}/"
