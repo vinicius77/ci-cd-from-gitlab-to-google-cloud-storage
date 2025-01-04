@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+check_command_status() {
+  if [ $? -ne 0 ]; then
+    echo
+    echo "= Error: Command failed: $1 ="
+    echo 
+    exit 1
+  fi
+}
+
+echo "Fetch and install dependencies"
+yarn
+check_command_status "yarn"
+
+echo "Build the TESTING app"
+yarn run buildtest
+check_command_status "yarn run buildtest" 
+
+echo "Activate the project"
+gcloud config configurations activate my-project
+check_command_status "gcloud config configurations activate" 
+
+echo "List the contents of the target bucket FYI"
+gsutil ls gs://path-to-cdn/dir/
+check_command_status "gsutil ls"
+
+echo "Delete previous before deploying a new version"
+gsutil -m rm -r gs://path-to-cdn/dir/
+check_command_status "gsutil rm"
+
+echo "Copy the latest version"
+gsutil -m cp client/dist/*.* gs://path-to-cdn/dir/
+check_command_status "gsutil cp"
+
+echo "The deed is done, go and check that everything works!"
+exit 0
