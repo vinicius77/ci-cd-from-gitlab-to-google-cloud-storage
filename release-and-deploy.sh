@@ -17,9 +17,9 @@ GIT_TAGS=$(git tag --sort=version:refname)
 # Get last tag (most recent) if any
 GIT_TAG_LATEST=$(echo "$GIT_TAGS" | tail -n 1)
 
-# no previous tags default to v0.0.0
+# no previous tags default to package.json
 if [ -z "$GIT_TAG_LATEST" ]; then
-	GIT_TAG_LATEST="v0.0.0"
+	GIT_TAG_LATEST="v$(grep -m 1 '"version"' package.json | awk -F: '{ print $2 }' | tr -d '", ')"		
 fi
 
 # replace v prefix with nothing
@@ -65,6 +65,21 @@ git push -u origin "v.$VERSION_NEXT"
 
 ./deploy_test_CDN &
 
-wait
+# Capture the PID of the background process
+PID=$!
 
-./deploy_stage_CDN
+# Wait for the background process to finish
+wait $PID
+
+# Capture the exit status of the background process
+EXIT_STATUS=$?
+
+# Check if the deploy_test_CDN process completed successfully
+if [ $EXIT_STATUS -ne 0 ]; then
+  echo "Error: deploy_test_CDN failed with exit code $EXIT_STATUS"
+  exit 1
+else
+  echo "deploy_test_CDN completed successfully."
+  echo "Executing deployment script deploy_stage_CDN ..."
+  ./deploy_stage_CDN
+fi
